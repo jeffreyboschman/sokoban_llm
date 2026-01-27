@@ -1,2 +1,2 @@
-networkx
-pydot
+networkx==3.6.1
+pydot==4.0.1
