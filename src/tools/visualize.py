@@ -4,6 +4,10 @@ from src.search.beamsearch import SearchNode
 
 import networkx as nx
 
+import logging
+
+_logger = logging.getLogger(__name__)
+
 def extract_plan(goal_node: SearchNode) -> list[str]:
     actions = []
     node = goal_node
@@ -15,15 +19,11 @@ def extract_plan(goal_node: SearchNode) -> list[str]:
 
 def render_plan(start: SokobanState, plan: list[str]):
     state = start
-    print("Initial State:")
-    print(state.render())
-    print()
+    _logger.info("Initial State:\n%s", state.render())
 
     for i, action in enumerate(plan):
         state = state.step(action)
-        print(f"Step {i+1}: {action}")
-        print(state.render())
-        print()
+        _logger.info("Step %d: %s \n%s", i+1, action, state.render())
 
 
 def export_search_graph(graph: nx.DiGraph, path="search_graph.dot"):

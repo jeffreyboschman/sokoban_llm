@@ -1,5 +1,7 @@
 from src.sokoban import SokobanState, ACTIONS
+import logging
 
+_logger = logging.getLogger(__name__)
 
 class OneStepPolicy:
     """
@@ -15,4 +17,5 @@ class MockHeuristicPolicy(OneStepPolicy):
     """
     def predict(self, state: SokobanState) -> list[tuple[str, float]]:
         # Uniform prior (baseline)
+        _logger.debug("Predicting actions for state: %s", state)
         return [(a, 1.0) for a in ACTIONS.keys()]

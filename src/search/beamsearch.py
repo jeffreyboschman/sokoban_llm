@@ -11,7 +11,7 @@ import logging
 
 
 
-logger = logging.getLogger(__name__)
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -75,19 +75,19 @@ class BeamSearchSolver:
         # Add root to visualization graph
         self.graph.add_node(root.id, label="START")
 
-        logger.info("Starting beam search")
-        logger.info("Beam width = %d | Max depth = %d", self.beam_width, self.max_depth)
+        _logger.info("Starting beam search")
+        _logger.info("Beam width = %d | Max depth = %d", self.beam_width, self.max_depth)
 
         # Main beam search loop (depth-limited)
         for depth in range(self.max_depth):
-            logger.debug("=" * 40)
-            logger.debug("Depth %d | Frontier size: %d", depth, len(frontier))
+            _logger.debug("=" * 40)
+            _logger.debug("Depth %d | Frontier size: %d", depth, len(frontier))
 
             candidates = []  # all children from this depth
 
             # Expand every node currently in the beam
             for node in frontier:
-                logger.debug(
+                _logger.debug(
                     "Expanding node %d | depth=%d | score=%.3f",
                     node.id,
                     node.depth,
@@ -96,7 +96,7 @@ class BeamSearchSolver:
 
                 # Check goal BEFORE expanding
                 if node.state.is_goal():
-                    logger.info("Goal reached at depth %d", node.depth)
+                    _logger.info("Goal reached at depth %d", node.depth)
                     return node
 
                 # Hashable key for visited check
@@ -104,7 +104,7 @@ class BeamSearchSolver:
 
                 # If we've already expanded this state, skip it
                 if state_key in visited:
-                    logger.debug(
+                    _logger.debug(
                         "Skipping node %d (state already visited)", node.id
                     )
                     continue
@@ -113,7 +113,7 @@ class BeamSearchSolver:
 
                 # Query the one-step policy (LLM)
                 action_scores = self.policy.predict(node.state)
-                logger.debug(
+                _logger.debug(
                     "Policy returned %d candidate actions", len(action_scores)
                 )
 
@@ -125,7 +125,7 @@ class BeamSearchSolver:
 
                     # Invalid move (wall, blocked push, etc.)
                     if next_state is None:
-                        logger.debug(
+                        _logger.debug(
                             "Action '%s' from node %d is invalid", action, node.id
                         )
                         continue
@@ -153,11 +153,11 @@ class BeamSearchSolver:
 
                 # If no children were generated, this node is a dead end
                 if valid_children == 0:
-                    logger.debug(
+                    _logger.debug(
                         "Node %d is a dead end (no valid actions)", node.id
                     )
                 else:
-                    logger.debug(
+                    _logger.debug(
                         "Node %d produced %d valid children",
                         node.id,
                         valid_children,
@@ -165,7 +165,7 @@ class BeamSearchSolver:
 
             # If nothing to expand further, terminate early
             if not candidates:
-                logger.warning(
+                _logger.warning(
                     "Search terminated early at depth %d (no candidates)", depth
                 )
                 return None
@@ -175,7 +175,7 @@ class BeamSearchSolver:
 
             # Prune to beam width
             if len(candidates) > self.beam_width:
-                logger.debug(
+                _logger.debug(
                     "Pruning beam: %d → %d",
                     len(candidates),
                     self.beam_width,
@@ -183,10 +183,10 @@ class BeamSearchSolver:
 
             frontier = candidates[: self.beam_width]
 
-            logger.debug(
+            _logger.debug(
                 "New frontier (top scores): %s",
                 [f"{n.score:.2f}" for n in frontier],
             )
 
-        logger.info("Max depth reached without finding goal")
+        _logger.info("Max depth reached without finding goal")
         return None
