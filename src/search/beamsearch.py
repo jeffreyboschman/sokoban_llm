@@ -5,7 +5,7 @@ import itertools
 import networkx as nx
 
 from src.sokoban import SokobanState
-from src.policy import OneStepPolicy
+from src.policy.base import OneStepPolicy
 
 import logging
 

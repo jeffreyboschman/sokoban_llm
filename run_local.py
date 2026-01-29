@@ -3,7 +3,7 @@ from src.logging import setup_logging
 from src.sokoban import parse_puzzle
 from src.tools.visualize import extract_plan, render_plan, export_search_graph
 from src.search.beamsearch import BeamSearchSolver
-from src.policy import MockHeuristicPolicy
+from src.policy.llm_policy import LLMOneStepPolicy, MistralOneStepPolicy
 
 
 
@@ -21,7 +21,7 @@ if __name__ == "__main__":
 
     state = parse_puzzle(puzzle)
     print(state.render())
-    policy = MockHeuristicPolicy()
+    policy = MistralOneStepPolicy()
     solver = BeamSearchSolver(policy, beam_width=10)
 
     goal = solver.solve(state)
