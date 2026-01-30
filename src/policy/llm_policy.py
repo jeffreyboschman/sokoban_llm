@@ -27,10 +27,11 @@ Current board:
 
 Choose the best next move. Select one of the following actions by outputting the corresponding letter only:
 
-A) up
-B) down
-C) left
-D) right
+A) left
+B) right
+C) up
+D) down
+
 
 Answer:
 """.strip()
@@ -60,16 +61,16 @@ class MistralOneStepPolicy(OneStepPolicy):
 
         # Action tokens (must be single-token)
         self.action_tokens = {
-            "up": self.tokenizer.encode("A", add_special_tokens=False)[0],
-            "down": self.tokenizer.encode("B", add_special_tokens=False)[0],
-            "left": self.tokenizer.encode("C", add_special_tokens=False)[0],
-            "right": self.tokenizer.encode("D", add_special_tokens=False)[0],
+            "left": self.tokenizer.encode("A", add_special_tokens=False)[0],
+            "right": self.tokenizer.encode("B", add_special_tokens=False)[0],
+            "up": self.tokenizer.encode("C", add_special_tokens=False)[0],
+            "down": self.tokenizer.encode("D", add_special_tokens=False)[0],
         }
 
-        _logger.info(f"Token id for A: {self.action_tokens['up']}")
-        _logger.info(f"Token id for B: {self.action_tokens['down']}")
-        _logger.info(f"Token id for C: {self.action_tokens['left']}")
-        _logger.info(f"Token id for D: {self.action_tokens['right']}")
+        _logger.info(f"Token id for A: {self.action_tokens['left']}")
+        _logger.info(f"Token id for B: {self.action_tokens['right']}")
+        _logger.info(f"Token id for C: {self.action_tokens['up']}")
+        _logger.info(f"Token id for D: {self.action_tokens['down']}")
 
         _logger.info("Loaded Mistral policy: %s", model_name)
 
@@ -89,9 +90,12 @@ class MistralOneStepPolicy(OneStepPolicy):
 
         _logger.debug("Decision logits size: %d", logits.size(0))
 
-        top_most_likely_token_ids = torch.topk(logits, k=10).indices[0].item()
-        most_likely_tokens = self.tokenizer.decode([top_most_likely_token_ids])
-        _logger.debug("Most likely tokens: %s", most_likely_tokens)
+        _logger.info("Top 10 most likely tokens:")
+        top_ten_most_likely_token_ids = torch.topk(logits, k=10).indices.tolist()
+        for token_id in top_ten_most_likely_token_ids:
+            token_str = self.tokenizer.decode([token_id])
+            token_logit = logits[token_id].item()
+            _logger.debug("  Token '%s' (id %d): logit %.3f", token_str, token_id, token_logit)
 
         # Extract action logits
         action_logits = torch.tensor(
