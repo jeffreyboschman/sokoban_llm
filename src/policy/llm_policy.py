@@ -25,7 +25,7 @@ Goal: push all boxes onto targets.
 Current board:
 {state_ascii}
 
-Choose the best next move.
+Choose the best next move. Select one of the following actions by outputting the corresponding letter only:
 
 A) up
 B) down
@@ -65,6 +65,11 @@ class MistralOneStepPolicy(OneStepPolicy):
             "left": self.tokenizer.encode("C", add_special_tokens=False)[0],
             "right": self.tokenizer.encode("D", add_special_tokens=False)[0],
         }
+
+        _logger.info(f"Token id for A: {self.action_tokens['up']}")
+        _logger.info(f"Token id for B: {self.action_tokens['down']}")
+        _logger.info(f"Token id for C: {self.action_tokens['left']}")
+        _logger.info(f"Token id for D: {self.action_tokens['right']}")
 
         _logger.info("Loaded Mistral policy: %s", model_name)
 
