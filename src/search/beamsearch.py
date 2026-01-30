@@ -116,11 +116,19 @@ class BeamSearchSolver:
                 _logger.debug(
                     "Policy returned %d candidate actions", len(action_scores)
                 )
+                sorted_actions = sorted(
+                    action_scores, key=lambda x: x[1], reverse=True
+                )
+                _logger.debug(
+                    "Top %s actions: %s",
+                    self.beam_width,
+                    [f"{action} ({score:.3f})" for action, score in sorted_actions[:self.beam_width]],
+                )
 
                 valid_children = 0
 
-                # Try all actions suggested by the policy
-                for action, logit in action_scores:
+                # Try the top actions suggested by the policy
+                for action, logit in sorted_actions[: self.beam_width]:
                     next_state = node.state.step(action)
 
                     # Invalid move (wall, blocked push, etc.)
