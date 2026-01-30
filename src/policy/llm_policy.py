@@ -89,6 +89,10 @@ class MistralOneStepPolicy(OneStepPolicy):
 
         _logger.debug("Decision logits size: %d", logits.size(0))
 
+        top_most_likely_token_ids = torch.topk(logits, k=10).indices[0].item()
+        most_likely_tokens = self.tokenizer.decode([top_most_likely_token_ids])
+        _logger.debug("Most likely tokens: %s", most_likely_tokens)
+
         # Extract action logits
         action_logits = torch.tensor(
             [logits[token_id] for token_id in self.action_tokens.values()],
