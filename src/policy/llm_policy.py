@@ -39,15 +39,15 @@ Current board:
 
 In this board, the player is at the bottom, box above it, target above. The best move is to move up to push the box towards the target.
 
-Action: U
+The best action is: U
 
 Now, for the current board:
 {state_ascii}
 
-Think step by step about the best move, then output exactly one letter from U, D, L, or R.
+Output exactly one letter from U, D, L, or R.
 Do not output anything else.
 
-Action: """
+The best action is: """
 
 
 class MistralOneStepPolicy(OneStepPolicy):
