@@ -38,7 +38,7 @@ class BeamSearchSolver:
     def __init__(
         self,
         policy: OneStepPolicy,
-        beam_width: int = 5,
+        beam_width: int = 4,
         max_depth: int = 50,
     ):
         self.policy = policy
@@ -112,14 +112,14 @@ class BeamSearchSolver:
                 visited.add(state_key)
 
                 # Query the one-step policy (LLM)
-                action_scores = self.policy.predict(node.state)
+                action_scores = self.policy.predict_and_log(node.state)
                 _logger.debug(
                     "Policy returned %d candidate actions", len(action_scores)
                 )
                 sorted_actions = sorted(
                     action_scores, key=lambda x: x[1], reverse=True
                 )
-                _logger.debug(
+                _logger.info(
                     "Top %s actions: %s",
                     self.beam_width,
                     [f"{action} ({score:.3f})" for action, score in sorted_actions[:self.beam_width]],
