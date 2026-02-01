@@ -25,17 +25,10 @@ Goal: push all boxes onto targets. If you move into a box, and there is an empty
 Current board:
 {state_ascii}
 
-Choose the best next move. Select one of the following actions by outputting the corresponding letter only:
+Choose the best next move. Select one of the following actions only:
+up, down, left, right
 
-A) left
-B) right
-C) up
-D) down
-
-Output exactly one character: A, B, C, or D.
-Do not include any explanation or extra text.
-
-Answer:
+Respond with a single action word only.
 """.strip()
 
 
@@ -63,20 +56,20 @@ class MistralOneStepPolicy(OneStepPolicy):
 
         # Action tokens (must be single-token)
         self.action_tokens = {
-            "left": self.tokenizer.encode(" A", add_special_tokens=False)[0],
-            "right": self.tokenizer.encode(" B", add_special_tokens=False)[0],
-            "up": self.tokenizer.encode(" C", add_special_tokens=False)[0],
-            "down": self.tokenizer.encode(" D", add_special_tokens=False)[0],
+            "left": self.tokenizer.encode("left", add_special_tokens=False)[0],
+            "right": self.tokenizer.encode("right", add_special_tokens=False)[0],
+            "up": self.tokenizer.encode("up", add_special_tokens=False)[0],
+            "down": self.tokenizer.encode("down", add_special_tokens=False)[0],
         }
 
         for k, v in self.action_tokens.items():
             decoded = self.tokenizer.decode([v])
             _logger.info("Action %s → token '%s' (id=%d)", k, decoded, v)
 
-        _logger.debug(f"Token id for A: {self.action_tokens['left']}")
-        _logger.debug(f"Token id for B: {self.action_tokens['right']}")
-        _logger.debug(f"Token id for C: {self.action_tokens['up']}")
-        _logger.debug(f"Token id for D: {self.action_tokens['down']}")
+        _logger.debug(f"Token id for left: {self.action_tokens['left']}")
+        _logger.debug(f"Token id for right: {self.action_tokens['right']}")
+        _logger.debug(f"Token id for up: {self.action_tokens['up']}")
+        _logger.debug(f"Token id for down: {self.action_tokens['down']}")
 
         _logger.info("Loaded Mistral policy: %s", model_name)
 
@@ -125,91 +118,91 @@ class MistralOneStepPolicy(OneStepPolicy):
         return results
 
 
-class LLMOneStepPolicy(OneStepPolicy):
-    def __init__(
-        self,
-        model_name: str = "google/flan-t5-small",
-        device: str | None = None,
-        temperature: float = 1.0,
-    ):
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+# class LLMOneStepPolicy(OneStepPolicy):
+#     def __init__(
+#         self,
+#         model_name: str = "google/flan-t5-small",
+#         device: str | None = None,
+#         temperature: float = 1.0,
+#     ):
+#         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+#         self.model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
 
-        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        self.model.to(self.device)
-        self.model.eval()
+#         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+#         self.model.to(self.device)
+#         self.model.eval()
 
-        self.temperature = temperature
+#         self.temperature = temperature
 
-        # Token IDs for actions (single-token for T5)
-        self.action_tokens = {
-            "up": self.tokenizer.encode("A", add_special_tokens=False)[0],
-            "down": self.tokenizer.encode("B", add_special_tokens=False)[0],
-            "left": self.tokenizer.encode("C", add_special_tokens=False)[0],
-            "right": self.tokenizer.encode("D", add_special_tokens=False)[0],
-        }
+#         # Token IDs for actions (single-token for T5)
+#         self.action_tokens = {
+#             "up": self.tokenizer.encode("A", add_special_tokens=False)[0],
+#             "down": self.tokenizer.encode("B", add_special_tokens=False)[0],
+#             "left": self.tokenizer.encode("C", add_special_tokens=False)[0],
+#             "right": self.tokenizer.encode("D", add_special_tokens=False)[0],
+#         }
 
-        _logger.info("Loaded LLM policy: %s on %s", model_name, self.device)
+#         _logger.info("Loaded LLM policy: %s on %s", model_name, self.device)
 
-    @torch.no_grad()
-    def predict(self, state: SokobanState) -> list[tuple[str, float]]:
-        prompt = sokoban_prompt(state.render())
-        _logger.debug("LLM prompt: %s", prompt)
+#     @torch.no_grad()
+#     def predict(self, state: SokobanState) -> list[tuple[str, float]]:
+#         prompt = sokoban_prompt(state.render())
+#         _logger.debug("LLM prompt: %s", prompt)
 
-        inputs = self.tokenizer(
-            prompt,
-            return_tensors="pt",
-            truncation=True,
-        ).to(self.device)
+#         inputs = self.tokenizer(
+#             prompt,
+#             return_tensors="pt",
+#             truncation=True,
+#         ).to(self.device)
 
-        # Forward pass — get logits for first output token
-        # outputs = self.model(
-        #     **inputs,
-        #     decoder_input_ids=torch.tensor(
-        #         [[self.model.config.decoder_start_token_id]],
-        #         device=self.device,
-        #     ),
-        # )
-        outputs = self.model.generate(
-            **inputs,
-            max_new_tokens=1,
-            return_dict_in_generate=True,
-            output_scores=True,
-            do_sample=False,  # greedy is fine
-        )
-        # scores[0] = logits at the first generated step
-        decision_logits = outputs.scores[0][0]  # shape: [vocab_size]
-        _logger.debug("LLM decision logits size: %d", decision_logits.size(0))
+#         # Forward pass — get logits for first output token
+#         # outputs = self.model(
+#         #     **inputs,
+#         #     decoder_input_ids=torch.tensor(
+#         #         [[self.model.config.decoder_start_token_id]],
+#         #         device=self.device,
+#         #     ),
+#         # )
+#         outputs = self.model.generate(
+#             **inputs,
+#             max_new_tokens=1,
+#             return_dict_in_generate=True,
+#             output_scores=True,
+#             do_sample=False,  # greedy is fine
+#         )
+#         # scores[0] = logits at the first generated step
+#         decision_logits = outputs.scores[0][0]  # shape: [vocab_size]
+#         _logger.debug("LLM decision logits size: %d", decision_logits.size(0))
 
-        # Actual most likely tokens
-        _logger.debug("Top 10 most likely tokens:")
-        top_ten_most_likely_token_ids = torch.topk(decision_logits, k=10).indices.tolist()
-        for token_id in top_ten_most_likely_token_ids:
-            token_str = self.tokenizer.decode([token_id])
-            token_logit = decision_logits[token_id].item()
-            _logger.debug("  Token '%s' (id %d): logit %.3f", token_str, token_id, token_logit)
+#         # Actual most likely tokens
+#         _logger.debug("Top 10 most likely tokens:")
+#         top_ten_most_likely_token_ids = torch.topk(decision_logits, k=10).indices.tolist()
+#         for token_id in top_ten_most_likely_token_ids:
+#             token_str = self.tokenizer.decode([token_id])
+#             token_logit = decision_logits[token_id].item()
+#             _logger.debug("  Token '%s' (id %d): logit %.3f", token_str, token_id, token_logit)
 
-        action_logits = torch.tensor(
-            [decision_logits[token_id] for token_id in self.action_tokens.values()],
-            device=self.device,
-        )
-        _logger.debug("Raw action logits: %s", action_logits.tolist())
+#         action_logits = torch.tensor(
+#             [decision_logits[token_id] for token_id in self.action_tokens.values()],
+#             device=self.device,
+#         )
+#         _logger.debug("Raw action logits: %s", action_logits.tolist())
 
-        #check
-        generated_token_id = outputs.sequences[0, -1].item()
-        generated_token = self.tokenizer.decode([generated_token_id])
-        _logger.debug("Generated token: %s", generated_token)
+#         #check
+#         generated_token_id = outputs.sequences[0, -1].item()
+#         generated_token = self.tokenizer.decode([generated_token_id])
+#         _logger.debug("Generated token: %s", generated_token)
 
-        # Temperature scaling
-        action_logits /= self.temperature
+#         # Temperature scaling
+#         action_logits /= self.temperature
 
-        probs = F.softmax(action_logits, dim=0)
+#         probs = F.softmax(action_logits, dim=0)
 
-        results = list(zip(self.action_tokens.keys(), probs.tolist()))
+#         results = list(zip(self.action_tokens.keys(), probs.tolist()))
 
-        _logger.debug(
-            "LLM action distribution: %s",
-            {a: f"{p:.2f}" for a, p in results},
-        )
+#         _logger.debug(
+#             "LLM action distribution: %s",
+#             {a: f"{p:.2f}" for a, p in results},
+#         )
 
-        return results
+#         return results
