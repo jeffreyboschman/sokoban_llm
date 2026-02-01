@@ -145,7 +145,7 @@ def main(args: argparse.Namespace):
 
     results = []
 
-    for i, puzzle_text in puzzles.items():
+    for i, puzzle_text in list(puzzles.items())[:args.num_puzzles]:
         logger.info(f"\nTesting Puzzle {i}...")
         state = parse_puzzle(puzzle_text)
         if args.verbose:
@@ -204,6 +204,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Batch test Sokoban puzzles")
     parser.add_argument('--policy', choices=['mistral', 'baseline'], default='baseline', help='Policy to use for solving')
     parser.add_argument('--beam_width', type=int, default=2, help='Beam width for the search')
+    parser.add_argument('--num_puzzles', type=int, default=len(puzzles), help='Number of puzzles to test')
     parser.add_argument('--output_file', type=str, default='batch_test_results.txt', help='Output file for results')
     parser.add_argument('--log_level', type=str, default='INFO', help='Logging level (DEBUG, INFO, WARNING, ERROR)')
     parser.add_argument('--verbose', action='store_true', help='Print detailed output including plans and initial states')
