@@ -30,7 +30,7 @@ R = right
 Current board:
 {state_ascii}
 
-Output exactly one letter from {U, D, L, R}.
+Output exactly one letter from U, D, L, or R.
 Do not output anything else.
 
 For example, if the best action is to move left, output "L" without quotes.
