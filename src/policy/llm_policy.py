@@ -9,8 +9,7 @@ from src.sokoban import SokobanState
 _logger = logging.getLogger(__name__)
 
 
-def sokoban_prompt(state_ascii: str) -> str:
-    return f"""
+_PROMPT = """
 You are an expert Sokoban solver.
 
 Rules:
@@ -22,14 +21,21 @@ Rules:
 
 Goal: push all boxes onto targets. If you move into a box, and there is an empty space beyond it, the box is pushed.
 
+Valid actions (choose exactly one):
+U = up
+D = down
+L = left
+R = right
+
 Current board:
 {state_ascii}
 
-Choose the best next move. Select one of the following actions only:
-up, down, left, right
+Output exactly one letter from {U, D, L, R}.
+Do not output anything else.
 
-Respond with a single action word only.
-""".strip()
+For example, if the best action is to move left, output "L" without quotes.
+
+Action:"""
 
 
 class MistralOneStepPolicy(OneStepPolicy):
@@ -56,10 +62,10 @@ class MistralOneStepPolicy(OneStepPolicy):
 
         # Action tokens (must be single-token)
         self.action_tokens = {
-            "left": self.tokenizer.encode("left", add_special_tokens=False)[0],
-            "right": self.tokenizer.encode("right", add_special_tokens=False)[0],
-            "up": self.tokenizer.encode("up", add_special_tokens=False)[0],
-            "down": self.tokenizer.encode("down", add_special_tokens=False)[0],
+            "left": self.tokenizer.encode("L", add_special_tokens=False)[0],
+            "right": self.tokenizer.encode("R", add_special_tokens=False)[0],
+            "up": self.tokenizer.encode("U", add_special_tokens=False)[0],
+            "down": self.tokenizer.encode("D", add_special_tokens=False)[0],
         }
 
         for k, v in self.action_tokens.items():
@@ -75,7 +81,7 @@ class MistralOneStepPolicy(OneStepPolicy):
 
     @torch.no_grad()
     def predict(self, state: SokobanState) -> list[tuple[str, float]]:
-        prompt = sokoban_prompt(state.render())
+        prompt = _PROMPT.format(state_ascii=state.render())
         _logger.debug("LLM prompt:\n%s", prompt)
 
         inputs = self.tokenizer(
