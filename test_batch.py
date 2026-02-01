@@ -1,4 +1,6 @@
 import time
+import argparse
+import logging
 from src.logging import setup_logging
 from src.sokoban import parse_puzzle
 from src.tools.visualize import extract_plan
@@ -130,19 +132,25 @@ puzzles = {
 """
 }
 
-if __name__ == "__main__":
-    setup_logging()
 
-    policy = MockHeuristicPolicy()
-    solver = BeamSearchSolver(policy, beam_width=4)
+def main(args: argparse.Namespace):
+    if args.policy == 'mistral':
+        policy = MistralOneStepPolicy()
+    else:
+        policy = MockHeuristicPolicy()
+
+    solver = BeamSearchSolver(policy, beam_width=args.beam_width)
+
+    logger.info(f"Running batch test with policy: {args.policy}, beam_width: {args.beam_width}")
 
     results = []
 
     for i, puzzle_text in puzzles.items():
-        print(f"\nTesting Puzzle {i}...")
+        logger.info(f"\nTesting Puzzle {i}...")
         state = parse_puzzle(puzzle_text)
-        print("Initial state:")
-        print(state.render())
+        if args.verbose:
+            logger.info("Initial state:")
+            logger.info(state.render())
 
         start_time = time.time()
         goal = solver.solve(state)
@@ -162,32 +170,50 @@ if __name__ == "__main__":
         }
         results.append(result)
 
-        print(f"Result: Solved={solved}, Time={duration:.2f}s, Plan Length={plan_length}, Nodes Expanded={nodes_expanded}")
+        logger.info(f"Result: Solved={solved}, Time={duration:.2f}s, Plan Length={plan_length}, Nodes Expanded={nodes_expanded}")
 
-        if solved:
+        if solved and args.verbose:
             plan = extract_plan(goal)
-            print("Plan:", plan)
-        else:
-            print("No solution found.")
+            logger.info(f"Plan: {plan}")
+        elif not solved:
+            logger.info("No solution found.")
 
     # Summary
-    print("\n" + "="*50)
-    print("SUMMARY")
-    print("="*50)
+    logger.info("\n" + "="*50)
+    logger.info("SUMMARY")
+    logger.info("="*50)
     total_solved = sum(1 for r in results if r['solved'])
     total_time = sum(r['time'] for r in results)
     avg_time = total_time / len(results)
-    print(f"Total Puzzles: {len(results)}")
-    print(f"Solved: {total_solved}")
-    print(f"Success Rate: {total_solved / len(results) * 100:.1f}%")
-    print(f"Total Time: {total_time:.2f}s")
-    print(f"Average Time: {avg_time:.2f}s")
+    logger.info(f"Total Puzzles: {len(results)}")
+    logger.info(f"Solved: {total_solved}")
+    logger.info(f"Success Rate: {total_solved / len(results) * 100:.1f}%")
+    logger.info(f"Total Time: {total_time:.2f}s")
+    logger.info(f"Average Time: {avg_time:.2f}s")
 
     # Save results to file
-    with open('batch_test_results.txt', 'w') as f:
+    with open(args.output_file, 'w') as f:
         f.write("Puzzle,Solved,Time(s),Plan Length,Nodes Expanded\n")
         for r in results:
             f.write(f"{r['puzzle']},{r['solved']},{r['time']:.2f},{r['plan_length']},{r['nodes_expanded']}\n")
         f.write(f"\nSummary: Solved {total_solved}/{len(results)}, Total Time {total_time:.2f}s, Avg Time {avg_time:.2f}s\n")
 
-    print("Results saved to batch_test_results.txt")
+    logger.info(f"Results saved to {args.output_file}")
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Batch test Sokoban puzzles")
+    parser.add_argument('--policy', choices=['mistral', 'baseline'], default='baseline', help='Policy to use for solving')
+    parser.add_argument('--beam_width', type=int, default=2, help='Beam width for the search')
+    parser.add_argument('--output_file', type=str, default='batch_test_results.txt', help='Output file for results')
+    parser.add_argument('--log_level', type=str, default='INFO', help='Logging level (DEBUG, INFO, WARNING, ERROR)')
+    parser.add_argument('--verbose', action='store_true', help='Print detailed output including plans and initial states')
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    args = parse_args()
+
+    setup_logging(args.log_level)
+    logger = logging.getLogger(__name__)
+
+    main(args)
