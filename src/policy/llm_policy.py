@@ -27,13 +27,25 @@ D = down
 L = left
 R = right
 
+Example:
 Current board:
+####
+# .#
+#  ###
+#    #
+#  @$#
+#  ###
+####
+
+In this board, the player is at the bottom, box to the right, target above. The best move is to move up to push the box towards the target.
+
+Action: U
+
+Now, for the current board:
 {state_ascii}
 
-Output exactly one letter from U, D, L, or R.
+Think step by step about the best move, then output exactly one letter from U, D, L, or R.
 Do not output anything else.
-
-For example, if the best action is to move left, output "L" without quotes.
 
 Action:"""
 
@@ -43,7 +55,7 @@ class MistralOneStepPolicy(OneStepPolicy):
         self,
         model_name: str = "mistralai/Mistral-7B-Instruct-v0.2",
         device: str | None = None,
-        temperature: float = 1.0,
+        temperature: float = 0.5,  # Lower temperature to reduce bias towards high-logit tokens
     ):
         self.tokenizer = AutoTokenizer.from_pretrained(
             model_name,
