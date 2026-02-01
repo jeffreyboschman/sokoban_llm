@@ -32,6 +32,8 @@ B) right
 C) up
 D) down
 
+Output exactly one character: A, B, C, or D.
+Do not include any explanation or extra text.
 
 Answer:
 """.strip()
@@ -61,11 +63,15 @@ class MistralOneStepPolicy(OneStepPolicy):
 
         # Action tokens (must be single-token)
         self.action_tokens = {
-            "left": self.tokenizer.encode("A", add_special_tokens=False)[0],
-            "right": self.tokenizer.encode("B", add_special_tokens=False)[0],
-            "up": self.tokenizer.encode("C", add_special_tokens=False)[0],
-            "down": self.tokenizer.encode("D", add_special_tokens=False)[0],
+            "left": self.tokenizer.encode(" A", add_special_tokens=False)[0],
+            "right": self.tokenizer.encode(" B", add_special_tokens=False)[0],
+            "up": self.tokenizer.encode(" C", add_special_tokens=False)[0],
+            "down": self.tokenizer.encode(" D", add_special_tokens=False)[0],
         }
+
+        for k, v in self.action_tokens.items():
+            decoded = self.tokenizer.decode([v])
+            _logger.info("Action %s → token '%s' (id=%d)", k, decoded, v)
 
         _logger.debug(f"Token id for A: {self.action_tokens['left']}")
         _logger.debug(f"Token id for B: {self.action_tokens['right']}")
@@ -174,6 +180,15 @@ class LLMOneStepPolicy(OneStepPolicy):
         # scores[0] = logits at the first generated step
         decision_logits = outputs.scores[0][0]  # shape: [vocab_size]
         _logger.debug("LLM decision logits size: %d", decision_logits.size(0))
+
+        # Actual most likely tokens
+        _logger.debug("Top 10 most likely tokens:")
+        top_ten_most_likely_token_ids = torch.topk(decision_logits, k=10).indices.tolist()
+        for token_id in top_ten_most_likely_token_ids:
+            token_str = self.tokenizer.decode([token_id])
+            token_logit = decision_logits[token_id].item()
+            _logger.debug("  Token '%s' (id %d): logit %.3f", token_str, token_id, token_logit)
+
         action_logits = torch.tensor(
             [decision_logits[token_id] for token_id in self.action_tokens.values()],
             device=self.device,
